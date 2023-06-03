@@ -38,6 +38,7 @@ class ChatBot:
         self.chatgpt = chatgpt
         self.token_key = None
         self.state = None
+        self.model = None
 
     def run(self):
         self.token_key = self.__choice_token_key()
@@ -93,7 +94,7 @@ class ChatBot:
             self.run()
         elif '/refresh' == command or '/reload' == command:
             self.__load_conversation(self.state.conversation_id)
-        elif '/new' == command:
+        elif '/new' == command or '/n' == command:
             self.__new_conversation()
             self.__talk_loop()
         elif '/regen' == command or '/regenerate' == command:
@@ -106,12 +107,14 @@ class ChatBot:
             self.__print_access_token()
         elif '/cls' == command or '/clear' == command:
             self.__clear_screen()
-        elif '/copy' == command or '/cp' == command:
+        elif '/copy' == command or '/cp' == command or '/cp' == command:
             self.__copy_text()
-        elif '/copy_code' == command or "/cp_code" == command:
+        elif '/copy_code' == command or "/cp_code" == command or '/cc' == command:
             self.__copy_code()
         elif '/ver' == command or '/version' == command:
             self.__print_version()
+        elif '/model' == command or '/m' == command:
+            self.__print_model()
         else:
             self.__print_usage()
 
@@ -132,6 +135,7 @@ class ChatBot:
         print('/copy_code\t\tCopy code from last response.')
         print('/clear\t\tClear your screen.')
         print('/version\tPrint the version of Pandora.')
+        print('/model\tPrint the version of model.')
         print('/exit\t\tExit Pandora.')
         print()
 
@@ -180,10 +184,16 @@ class ChatBot:
         Console.debug_bh('#### Version: {}'.format(__version__))
         print()
 
+    def __print_model(self):
+        Console.debug_bh('#### Model is: {}'.format(self.model['title']))
+        print()
+
     def __new_conversation(self):
-        self.state = State(model_slug=self.__choice_model()['slug'])
+        self.model = self.__choice_model()
+        self.state = State(model_slug=self.model['slug'])
 
         self.state.title = 'New Chat'
+        Console.info_b(self.model['title'])
         self.__print_conversation_title(self.state.title)
 
     @staticmethod
@@ -269,13 +279,15 @@ class ChatBot:
 
                 if not merge:
                     Console.success_b('ChatGPT:')
-                Console.success(message['content']['parts'][0])
+                if message['content'].get('parts'):
+                    Console.success(message['content']['parts'][0])
 
                 merge = 'end_turn' in message and message['end_turn'] is None
             else:
                 continue
 
-            prompt.prompt = message['content']['parts'][0]
+            if message['content'].get('parts'):
+                prompt.prompt = message['content']['parts'][0]
             prompt.parent_id = node['parent']
             prompt.message_id = node['id']
 
@@ -348,11 +360,13 @@ class ChatBot:
             text = None
             message = result['message']
             if 'assistant' == message['author']['role']:
-                text = message['content']['parts'][0][p:]
-                p += len(text)
+                if message['content'].get('parts'):
+                    text = message['content']['parts'][0][p:]
+                    p += len(text)
 
             self.state.conversation_id = result['conversation_id']
-            self.state.chatgpt_prompt.prompt = message['content']['parts'][0]
+            if message['content'].get('parts'):
+                self.state.chatgpt_prompt.prompt = message['content']['parts'][0]
             self.state.chatgpt_prompt.parent_id = self.state.user_prompt.message_id
             self.state.chatgpt_prompt.message_id = message['id']
 
