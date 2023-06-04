@@ -38,7 +38,6 @@ class ChatBot:
         self.chatgpt = chatgpt
         self.token_key = None
         self.state = None
-        self.model = None
 
     def run(self):
         self.token_key = self.__choice_token_key()
@@ -71,10 +70,10 @@ class ChatBot:
         while True:
             line = input()
 
-            if not line:
+            if line.lower() == "[]" or line.lower() == "【】":
                 break
 
-            if '/' == line[0]:
+            if len(line) > 0 and '/' == line[0]:
                 return line
 
             lines.append(line)
@@ -185,12 +184,11 @@ class ChatBot:
         print()
 
     def __print_model(self):
-        Console.debug_bh('#### Model is: {}'.format(self.model['title']))
+        Console.debug_bh('#### Model is: {}'.format(self.state.model_slug))
         print()
 
     def __new_conversation(self):
-        self.model = self.__choice_model()
-        self.state = State(model_slug=self.model['slug'])
+        self.state = State(model_slug=self.__choice_model()['slug'])
 
         self.state.title = 'New Chat'
         Console.info_b(self.model['title'])
