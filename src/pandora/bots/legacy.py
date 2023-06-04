@@ -8,6 +8,7 @@ from rich.prompt import Prompt, Confirm
 
 from .. import __version__
 from ..openai.utils import Console
+from dateutil.parser import parse
 
 
 class ChatPrompt:
@@ -385,6 +386,11 @@ class ChatBot:
 
         choices = ['c', 'r', 'dd']
         items = conversations['items']
+        # 将 update_time 字段解析为 datetime 对象，以便可以对它们进行比较和排序
+        for item in items:
+            item["update_time"] = parse(item["update_time"])
+        items = sorted(items, key=lambda x: x['update_time'], reverse=True)
+
         first_page = 0 == conversations['offset']
         last_page = (conversations['offset'] + conversations['limit']) >= conversations['total']
 
