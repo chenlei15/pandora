@@ -89,7 +89,7 @@ class ChatBot:
             self.__del_conversation(self.state)
         elif '/title' == command or '/set_title' == command or '/set-title' == command:
             self.__set_conversation_title(self.state)
-        elif '/select' == command:
+        elif '/select' == command or '/s' == command:
             self.run()
         elif '/refresh' == command or '/reload' == command:
             self.__load_conversation(self.state.conversation_id)
@@ -114,6 +114,8 @@ class ChatBot:
             self.__print_version()
         elif '/model' == command or '/m' == command:
             self.__print_model()
+        elif '/copy_link' == command or '/cl' == command:
+            self.__copy_link()
         else:
             self.__print_usage()
 
@@ -122,19 +124,20 @@ class ChatBot:
         Console.info_b('\n#### Command list:')
         print('/?\t\tShow this help message.')
         print('/title\t\tSet the current conversation\'s title.')
-        print('/select\t\tChoice a different conversation.')
+        print('/select or /s\t\tChoice a different conversation.')
         print('/reload\t\tReload the current conversation.')
         print('/regen\t\tRegenerate response.')
         print('/continue\t\tContinue generating.')
         print('/edit\t\tEdit one of your previous prompt.')
-        print('/new\t\tStart a new conversation.')
+        print('/new or /n\t\tStart a new conversation.')
         print('/del\t\tDelete the current conversation.')
         print('/token\t\tPrint your access token.')
-        print('/copy\t\tCopy the last response to clipboard.')
-        print('/copy_code\t\tCopy code from last response.')
+        print('/copy or /c\t\tCopy the last response to clipboard.')
+        print('/copy_code or /cc\t\tCopy code from last response.')
         print('/clear\t\tClear your screen.')
         print('/version\tPrint the version of Pandora.')
         print('/model\tPrint the version of model.')
+        print('/copy_link or /cl\tCopy current conversation link.')
         print('/exit\t\tExit Pandora.')
         print()
 
@@ -274,9 +277,9 @@ class ChatBot:
             elif 'assistant' == role:
                 prompt = self.state.chatgpt_prompt
 
-                if not merge:
-                    Console.success_b('ChatGPT:')
                 if message['content'].get('parts'):
+                    if not merge:
+                        Console.success_b('ChatGPT:')
                     Console.success(message['content']['parts'][0])
 
                 merge = 'end_turn' in message and message['end_turn'] is None
@@ -285,11 +288,11 @@ class ChatBot:
 
             if message['content'].get('parts'):
                 prompt.prompt = message['content']['parts'][0]
-            prompt.parent_id = node['parent']
-            prompt.message_id = node['id']
+                prompt.parent_id = node['parent']
+                prompt.message_id = node['id']
+                if not merge:
+                    print()
 
-            if not merge:
-                print()
 
     def __talk(self, prompt):
         Console.success_b('ChatGPT:')
@@ -364,8 +367,8 @@ class ChatBot:
             self.state.conversation_id = result['conversation_id']
             if message['content'].get('parts'):
                 self.state.chatgpt_prompt.prompt = message['content']['parts'][0]
-            self.state.chatgpt_prompt.parent_id = self.state.user_prompt.message_id
-            self.state.chatgpt_prompt.message_id = message['id']
+                self.state.chatgpt_prompt.parent_id = self.state.user_prompt.message_id
+                self.state.chatgpt_prompt.message_id = message['id']
 
             if 'system' == message['author']['role']:
                 self.state.user_prompt.parent_id = message['id']
@@ -489,6 +492,13 @@ class ChatBot:
     def __copy_text(self):
         pyperclip.copy(self.state.chatgpt_prompt.prompt)
         Console.info("已将上一次返回结果复制到剪切板。")
+        pass
+
+    def __copy_link(self):
+        link = "https://chat.openai.com/c/" + self.state.conversation_id
+        pyperclip.copy(link)
+        Console.info(link)
+        Console.info("已将当前对话的链接复制到剪切板。")
         pass
 
     def __copy_code(self):
