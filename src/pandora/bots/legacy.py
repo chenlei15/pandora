@@ -191,7 +191,6 @@ class ChatBot:
         self.state = State(model_slug=self.__choice_model()['slug'])
 
         self.state.title = 'New Chat'
-        Console.info_b(self.model['title'])
         self.__print_conversation_title(self.state.title)
 
     @staticmethod
